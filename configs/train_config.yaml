@@ -9,7 +9,7 @@ dataset_type: csv
 
 # Training
 batch_size: 32
-epochs: 5
+epochs: 1
 lr: 5e-6
 warmup: 100
 workers: 4

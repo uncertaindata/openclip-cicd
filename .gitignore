@@ -1,0 +1,6 @@
+data
+images
+__pycache__
+*.pyc
+logs/
+mlruns/

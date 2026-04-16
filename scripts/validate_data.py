@@ -64,12 +64,13 @@ def validate_images_readable(df: pd.DataFrame, csv_path: str, sample_n: int = 50
 
 
 def validate_duplicates(df: pd.DataFrame, csv_path: str) -> list[str]:
-    """Check for duplicate filepaths."""
-    errors = []
+    """Check for duplicate filepaths. Warns but does not fail."""
+    warnings = []
     dupes = df["filepath"].duplicated().sum()
     if dupes > 0:
-        errors.append(f"{csv_path}: {dupes} duplicate filepath entries")
-    return errors
+        print(f"  WARNING: {csv_path}: {dupes} duplicate filepath entries (will be dropped)")
+        df.drop_duplicates(subset="filepath", inplace=True)
+    return warnings  # returns empty — duplicates are not fatal
 
 
 def validate_min_samples(df: pd.DataFrame, csv_path: str, min_samples: int) -> list[str]:

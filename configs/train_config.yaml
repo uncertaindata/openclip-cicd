@@ -1,0 +1,24 @@
+# OpenCLIP fine-tuning config
+model: ViT-B-32
+pretrained: laion2b_s34b_b79k
+
+# Data (tab-separated, columns: filepath, title)
+train_data: data/training/train.csv
+val_data: data/validation/val.csv
+dataset_type: csv
+
+# Training
+batch_size: 32
+epochs: 5
+lr: 5e-6
+warmup: 100
+workers: 4
+precision: amp
+
+# Distributed (set to number of GPUs)
+nproc: 1
+
+# Logging
+logs_dir: logs
+save_frequency: 1
+report_to: tensorboard

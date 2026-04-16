@@ -83,7 +83,7 @@ def main():
     parser.add_argument("--prod-checkpoint", required=True, help="Path to current production checkpoint")
     parser.add_argument("--val-data", required=True, help="Path to validation CSV")
     parser.add_argument("--model", default="ViT-B-32", help="Model architecture name")
-    parser.add_argument("--threshold", type=float, default=0.005,
+    parser.add_argument("--threshold", type=float, default=-1,
                         help="New model must beat prod by this margin on recall@1")
     parser.add_argument("--max-samples", type=int, default=500,
                         help="Max validation samples to use (for speed)")

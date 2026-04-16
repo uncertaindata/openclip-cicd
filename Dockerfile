@@ -15,11 +15,12 @@ RUN pip install --no-cache-dir /workspace/open_clip[training]
 RUN pip install --no-cache-dir \
     mlflow \
     onnx \
-    onnxruntime
+    onnxruntime \
+    tensorboard
 
 # Everything else is mounted at runtime:
 #   docker run --gpus all \
 #     -v /home/sumit/sumit-cicd-data-openclip-val:/workspace \
 #     openclip-cicd bash pipeline.sh
 
-ENTRYPOINT ["bash"]
+ENTRYPOINT ["/bin/bash"]

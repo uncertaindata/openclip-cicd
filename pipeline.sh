@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e  # stop on first failure
 
+# On failure, restore original training set
+cleanup_on_failure() {
+    if [ -f data/training/train.csv.bak ]; then
+        echo "Pipeline failed — restoring original training set"
+        mv data/training/train.csv.bak data/training/train.csv
+    fi
+}
+trap cleanup_on_failure ERR
+
 WORKSPACE="/workspace"
 CONFIG="configs/train_config.yaml"
 RUN_NAME="run_$(date +%Y%m%d_%H%M%S)"
@@ -33,17 +42,13 @@ for csv in data/incoming/*.csv; do
     python scripts/validate_data.py --csv "$csv"
 done
 
-# Merge incoming into training set
+# Merge incoming into training set (keep originals in incoming/ until pipeline succeeds)
 echo "Merging incoming data into training set..."
+cp data/training/train.csv data/training/train.csv.bak
 for csv in data/incoming/*.csv; do
-    # Skip header line, append data rows
     tail -n +2 "$csv" >> data/training/train.csv
 done
-
-# Move processed files so they don't get picked up again
-mkdir -p data/processed
-mv data/incoming/*.csv data/processed/
-echo "Merged and moved to data/processed/"
+echo "Merged. Originals stay in incoming/ until pipeline completes."
 
 # -------------------------------------------------
 # Step 3: Train
@@ -92,6 +97,12 @@ python scripts/register.py \
 mkdir -p models/production
 cp "$NEW_CHECKPOINT" "$PROD_CHECKPOINT"
 echo "Updated production checkpoint"
+
+# Move processed files now that everything succeeded
+mkdir -p data/processed
+mv data/incoming/*.csv data/processed/
+rm -f data/training/train.csv.bak
+echo "Moved incoming data to data/processed/"
 
 echo ""
 echo "============================================"

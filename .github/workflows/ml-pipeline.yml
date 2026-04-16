@@ -1,0 +1,41 @@
+name: ML Pipeline
+
+# Triggers
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'configs/**'
+      - 'pipeline.sh'
+      - 'Dockerfile'
+
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      run_name:
+        description: 'Name for this training run'
+        required: false
+        default: ''
+
+jobs:
+  train-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build Docker image
+        run: docker build -t openclip-cicd .
+
+      - name: Run pipeline
+        run: |
+          docker run --gpus all \
+            --shm-size=8g \
+            -v /home/sumit/sumit-cicd-data-openclip-val:/home/sumit/sumit-cicd-data-openclip-val \
+            -w /home/sumit/sumit-cicd-data-openclip-val \
+            --entrypoint /bin/bash openclip-cicd \
+            pipeline.sh

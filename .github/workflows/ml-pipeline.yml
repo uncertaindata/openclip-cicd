@@ -28,8 +28,16 @@ jobs:
         with:
           submodules: true
 
-      - name: Build Docker image
-        run: docker build -t openclip-cicd .
+      - name: Build Docker image (skips if unchanged)
+        run: |
+          IMAGE_EXISTS=$(docker images -q openclip-cicd 2>/dev/null)
+          DOCKERFILE_CHANGED=$(git diff HEAD~1 --name-only 2>/dev/null | grep -c "Dockerfile\|open_clip" || true)
+          if [ -z "$IMAGE_EXISTS" ] || [ "$DOCKERFILE_CHANGED" -gt 0 ]; then
+            echo "Building image..."
+            docker build -t openclip-cicd .
+          else
+            echo "Image exists and Dockerfile unchanged — skipping build"
+          fi
 
       - name: Run pipeline
         run: |

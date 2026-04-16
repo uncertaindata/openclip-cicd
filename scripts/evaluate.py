@@ -14,6 +14,8 @@ Usage:
 """
 
 import argparse
+import json
+import os
 import sys
 
 import pandas as pd
@@ -85,6 +87,8 @@ def main():
                         help="New model must beat prod by this margin on recall@1")
     parser.add_argument("--max-samples", type=int, default=500,
                         help="Max validation samples to use (for speed)")
+    parser.add_argument("--metrics-out", default="metrics.json",
+                        help="Path to save metrics JSON (used by register.py)")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -97,18 +101,32 @@ def main():
     print(f"Device: {device}")
     print("-" * 60)
 
-    # Evaluate production model
-    print(f"\nLoading production model: {args.prod_checkpoint}")
-    prod_model, prod_preprocess, prod_tokenizer = load_model(args.model, args.prod_checkpoint, device)
-    prod_metrics = compute_retrieval_metrics(prod_model, prod_preprocess, prod_tokenizer, val_df, device)
-    del prod_model
-    torch.cuda.empty_cache()
-
     # Evaluate new model
     print(f"\nLoading new model: {args.new_checkpoint}")
     new_model, new_preprocess, new_tokenizer = load_model(args.model, args.new_checkpoint, device)
     new_metrics = compute_retrieval_metrics(new_model, new_preprocess, new_tokenizer, val_df, device)
     del new_model
+    torch.cuda.empty_cache()
+
+    # First run — no production model yet
+    if not os.path.exists(args.prod_checkpoint):
+        print(f"\nNo production model found at {args.prod_checkpoint}")
+        print("First run — skipping comparison, auto-promoting new model")
+        print(f"\nNew model metrics:")
+        for key, val in new_metrics.items():
+            print(f"  {key}: {val:.4f}")
+
+        # Save metrics
+        with open(args.metrics_out, "w") as f:
+            json.dump(new_metrics, f)
+        print(f"\nMetrics saved to {args.metrics_out}")
+        sys.exit(0)
+
+    # Evaluate production model
+    print(f"\nLoading production model: {args.prod_checkpoint}")
+    prod_model, prod_preprocess, prod_tokenizer = load_model(args.model, args.prod_checkpoint, device)
+    prod_metrics = compute_retrieval_metrics(prod_model, prod_preprocess, prod_tokenizer, val_df, device)
+    del prod_model
     torch.cuda.empty_cache()
 
     # Compare
@@ -119,6 +137,11 @@ def main():
         delta = new_metrics[key] - prod_metrics[key]
         print(f"{key:<12} {prod_metrics[key]:>12.4f} {new_metrics[key]:>12.4f} {delta:>+12.4f}")
     print("=" * 60)
+
+    # Save metrics
+    with open(args.metrics_out, "w") as f:
+        json.dump(new_metrics, f)
+    print(f"Metrics saved to {args.metrics_out}")
 
     # Gate decision
     delta_r1 = new_metrics["recall@1"] - prod_metrics["recall@1"]

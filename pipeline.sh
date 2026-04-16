@@ -68,11 +68,14 @@ echo "New checkpoint: $NEW_CHECKPOINT"
 echo ""
 echo "[4/5] Evaluating new model vs production..."
 
+METRICS_FILE="logs/$RUN_NAME/metrics.json"
+
 python scripts/evaluate.py \
     --new-checkpoint "$NEW_CHECKPOINT" \
     --prod-checkpoint "$PROD_CHECKPOINT" \
     --val-data data/validation/val.csv \
-    --model ViT-B-32
+    --model ViT-B-32 \
+    --metrics-out "$METRICS_FILE"
 
 # If evaluate.py exits non-zero, set -e stops the pipeline here
 
@@ -82,16 +85,9 @@ python scripts/evaluate.py \
 echo ""
 echo "[5/5] Registering model..."
 
-# Extract metrics from evaluate.py output (re-run with capture)
-METRICS=$(python scripts/evaluate.py \
-    --new-checkpoint "$NEW_CHECKPOINT" \
-    --prod-checkpoint "$PROD_CHECKPOINT" \
-    --val-data data/validation/val.csv \
-    --model ViT-B-32 2>&1 | grep -oP '\{.*\}' || echo '{}')
-
 python scripts/register.py \
     --checkpoint "$NEW_CHECKPOINT" \
-    --metrics "$METRICS"
+    --metrics "$(cat $METRICS_FILE)"
 
 # Update production checkpoint
 mkdir -p models/production

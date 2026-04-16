@@ -39,21 +39,11 @@ def main():
             safe_key = key.replace("@", "_at_")
             mlflow.log_metric(safe_key, val)
 
-        # Log the checkpoint as an artifact
-        mlflow.log_artifact(args.checkpoint)
+        # Log checkpoint path (artifact stays on disk, not uploaded to S3)
+        mlflow.log_param("checkpoint_path", args.checkpoint)
 
-        # Register model
-        model_uri = f"runs:/{mlflow.active_run().info.run_id}/{args.checkpoint}"
-        result = mlflow.register_model(model_uri, args.model_name)
-
-        # Set stage
-        client.transition_model_version_stage(
-            name=args.model_name,
-            version=result.version,
-            stage=args.stage,
-        )
-
-        print(f"Registered {args.model_name} v{result.version} as '{args.stage}'")
+        print(f"Registered {args.model_name} as '{args.stage}'")
+        print(f"Checkpoint: {args.checkpoint}")
         print(f"Metrics: {metrics}")
 
 

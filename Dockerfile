@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir \
     mlflow \
     onnx \
     onnxruntime \
-    tensorboard
+    tensorboard \
+    boto3
 
 # Everything else is mounted at runtime:
 #   docker run --gpus all \

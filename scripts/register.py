@@ -36,7 +36,8 @@ def main():
     with mlflow.start_run(run_name=f"register_{args.model_name}"):
         # Log metrics
         for key, val in metrics.items():
-            mlflow.log_metric(key, val)
+            safe_key = key.replace("@", "_at_")
+            mlflow.log_metric(safe_key, val)
 
         # Log the checkpoint as an artifact
         mlflow.log_artifact(args.checkpoint)

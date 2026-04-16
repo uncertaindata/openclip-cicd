@@ -31,6 +31,7 @@ def main():
         "torchrun",
         "--nproc_per_node", str(cfg["nproc"]),
         "-m", "open_clip_train.main",
+        "--",
         "--model", cfg["model"],
         "--pretrained", cfg["pretrained"],
         "--train-data", cfg["train_data"],
